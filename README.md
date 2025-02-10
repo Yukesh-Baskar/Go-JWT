@@ -1,2 +1,2 @@
 # Go-Restaurant
-This repo consists of restaurant  backend API's using Golang.
+This repo consists of restaurant  backend API's using Golang, Gin and Mongodb.
