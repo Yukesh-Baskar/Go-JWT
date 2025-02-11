@@ -21,4 +21,5 @@ func UserRoutes(incomingRoute *gin.Engine) {
 	incomingRoute.PATCH("/update-user/:id", middlewares.UpdateUserMiddleware, controllers.UpdateUserController)
 
 	// delete-user
+	incomingRoute.DELETE("/delete-user/:id", middlewares.DeleteUserMiddleware, controllers.DeleteUserController)
 }

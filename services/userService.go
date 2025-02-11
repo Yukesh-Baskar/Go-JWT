@@ -186,3 +186,20 @@ func UpdateUser(claims_user_email string, user models.User) (*mongo.UpdateResult
 	}
 	return userCollection.UpdateOne(ctx, filter, bson.D{{Key: "$set", Value: updateObj}}, &opts)
 }
+
+func DeleteUserService(claim_email string, id primitive.ObjectID) (*mongo.DeleteResult, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
+
+	filter := bson.D{{Key: "_id", Value: id}, {Key: "email", Value: claim_email}}
+	var user *models.User
+	err := userCollection.FindOne(ctx, filter).Decode(&user)
+	if err != nil {
+		return nil, &models.ErrorHandler{
+			Message:    err.Error(),
+			StatusCode: http.StatusUnauthorized,
+		}
+	}
+
+	return userCollection.DeleteOne(ctx, filter)
+}

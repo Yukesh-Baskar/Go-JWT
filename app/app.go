@@ -13,8 +13,8 @@ func StartApplication() error {
 	if err != nil {
 		return err
 	}
+	// gin.ForceConsoleColor()
 	router := gin.Default()
-
 	routes.UserRoutes(router)
 
 	fmt.Printf("Server Listening on port: %v", port)

@@ -157,6 +157,68 @@ func UpdateUserMiddleware(c *gin.Context) {
 		return
 	}
 
+	var user models.User
+	err := c.BindJSON(&user)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, models.ErrorHandler{
+			Message:    err.Error(),
+			StatusCode: http.StatusUnauthorized,
+		})
+		return
+	}
+
+	claims_email, err := AuthHelper(token)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, models.ErrorHandler{
+			Message:    err.Error(),
+			StatusCode: http.StatusUnauthorized,
+		})
+		return
+	}
+
+	c.Set("claims_user_email", claims_email)
+	c.Set("user", user)
+	c.Next()
+}
+
+func DeleteUserMiddleware(c *gin.Context) {
+	id := c.Param("id")
+	if id == "" {
+		c.AbortWithStatusJSON(http.StatusBadRequest, models.ErrorHandler{
+			Message:    "Id can't be empty",
+			StatusCode: http.StatusBadRequest,
+		})
+		return
+	}
+	token := c.GetHeader("Authorization")
+	if token == "" {
+		c.AbortWithStatusJSON(http.StatusBadRequest, models.ErrorHandler{
+			Message:    "Missing or invalid Authorization header",
+			StatusCode: http.StatusBadRequest,
+		})
+		return
+	}
+	email, err := AuthHelper(token)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, models.ErrorHandler{
+			Message:    err.Error(),
+			StatusCode: http.StatusUnauthorized,
+		})
+		return
+	}
+	c.Set("claims_user_email", email)
+	c.Set("id", id)
+	c.Next()
+}
+
+func AuthHelper(token string) (string, error) {
+	if token == "" {
+		return "", &models.ErrorHandler{
+			Message:    "Missing or invalid Authorization header",
+			StatusCode: http.StatusBadRequest,
+		}
+	}
+
 	token = token[7:]
 
 	claims := models.JWTClaims{}
@@ -164,35 +226,29 @@ func UpdateUserMiddleware(c *gin.Context) {
 		return []byte("SECRET_KEY@12345"), nil
 	})
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, models.ErrorHandler{
+		return "", &models.ErrorHandler{
 			Message:    err.Error(),
 			StatusCode: http.StatusUnauthorized,
-		})
-		return
+		}
 	}
 
 	if !jwtToken.Valid {
-		c.AbortWithStatusJSON(http.StatusBadRequest, models.ErrorHandler{
+		return "", &models.ErrorHandler{
 			Message:    "Invalid Token",
 			StatusCode: http.StatusUnauthorized,
-		})
-		return
+		}
 	}
-	var user models.User
-	err = c.BindJSON(&user)
-	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, models.ErrorHandler{
-			Message:    err.Error(),
-			StatusCode: http.StatusUnauthorized,
-		})
-		return
-	}
+	// var user models.User
+	// err = c.BindJSON(&user)
+	// if err != nil {
+	// 	c.AbortWithStatusJSON(http.StatusBadRequest, models.ErrorHandler{
+	// 		Message:    err.Error(),
+	// 		StatusCode: http.StatusUnauthorized,
+	// 	})
+	// 	return
+	// }
 
-	c.Set("claims_user_email", claims.UserEmail)
-	c.Set("user", user)
-	c.Next()
-}
-
-func DeleteUserMiddleware(c *gin.Context) {
-
+	// c.Set("claims_user_email", claims.UserEmail)
+	// c.Set("user", user)
+	return claims.UserEmail, nil
 }

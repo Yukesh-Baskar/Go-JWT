@@ -4,8 +4,10 @@ import (
 	"go-jwt/models"
 	"go-jwt/services"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 func RegisterUser(c *gin.Context) {
@@ -120,6 +122,44 @@ func UpdateUserController(c *gin.Context) {
 		c.AbortWithStatusJSON(err.(*models.ErrorHandler).StatusCode, models.ErrorHandler{
 			Message:    err.(*models.ErrorHandler).Message,
 			StatusCode: err.(*models.ErrorHandler).StatusCode,
+		})
+		return
+	}
+	c.JSON(http.StatusOK, res)
+}
+
+func DeleteUserController(c *gin.Context) {
+	id, ok := c.Get("id")
+	if !ok {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, models.ErrorHandler{
+			Message:    "Error occured while fetching id",
+			StatusCode: http.StatusInsufficientStorage,
+		})
+		return
+	}
+	claims_user_email, ok := c.Get("claims_user_email")
+	if !ok {
+		c.AbortWithStatusJSON(http.StatusBadRequest, models.ErrorHandler{
+			Message:    "Error occured while getting claims data",
+			StatusCode: http.StatusBadRequest,
+		})
+		return
+	}
+
+	objectId, err := primitive.ObjectIDFromHex(strings.TrimSpace(id.(string)))
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, models.ErrorHandler{
+			Message:    err.Error(),
+			StatusCode: http.StatusInsufficientStorage,
+		})
+		return
+	}
+
+	res, err := services.DeleteUserService(claims_user_email.(string), objectId)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, models.ErrorHandler{
+			Message:    err.Error(),
+			StatusCode: http.StatusInsufficientStorage,
 		})
 		return
 	}
